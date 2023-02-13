@@ -1,9 +1,19 @@
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "./stb_image_write.h"
 #include <vector>
 #include <fstream>
 #include <cstdint>
 #include <algorithm>
-#include "./file_lib.cpp"
-#include "./math_lib.cpp"
+#include "./lib/file_lib.cpp"
+#include "./lib/math_lib.cpp"
+
+extern const int WIDTH;
+extern const int HEIGHT;
+
+// TODO: Implement nobuild tool from rexim
+// TODO: Implement stb writing to file Linux/Windows
+// TOOD: Restructure the canvas so that it can be saved with stb
 
 namespace sharp
 {
@@ -24,11 +34,11 @@ namespace sharp
   struct Color
   {
     Pixel White = {255, 255, 255};
-    Pixel Black = {0, 0 ,0};
+    Pixel Black = {0, 0, 0};
     Pixel Red = {255, 0, 0};
     Pixel Green = {0, 255, 0};
     Pixel Blue = {0, 0, 255};
-  }Colors;
+  } Colors;
 
   using canvas = std::vector<std::vector<Pixel>>;
 
@@ -55,19 +65,35 @@ namespace sharp
     }
   };
 
-  void SaveCanvas(sharp::canvas p_Canvas){
-    BYTE* buf = new BYTE[p_Canvas.size() * 3 * p_Canvas[0].size()];
+  void SaveToBmp(sharp::canvas p_Canvas)
+  {
+    Pixel data[WIDTH][HEIGHT];
+    for (int i = 0; i < p_Canvas.size(); i++)
+    {
+      for (int j = 0; j < p_Canvas[i].size(); j++)
+      {
+        data[i][j] = p_Canvas[i][j];
+      }
+    }
+    stbi_write_bmp("C:\\Users\\andre\\home\\Projects\\sharp\\build\\output.bmp", p_Canvas.size(), p_Canvas[0].size(), 3, data);
+  }
+
+  void SaveCanvas(sharp::canvas p_Canvas)
+  {
+    BYTE *buf = new BYTE[p_Canvas.size() * 3 * p_Canvas[0].size()];
     int c = 0;
-    for(int i = 0; i<p_Canvas.size(); i++){
-      for(int j = 0; j<p_Canvas[i].size(); j++){
-        buf[c + 0] = (BYTE) p_Canvas[i][j].B;
-        buf[c + 1] = (BYTE) p_Canvas[i][j].G;
-        buf[c + 2] = (BYTE) p_Canvas[i][j].R;
+    for (int i = 0; i < p_Canvas.size(); i++)
+    {
+      for (int j = 0; j < p_Canvas[i].size(); j++)
+      {
+        buf[c + 0] = (BYTE)p_Canvas[i][j].B;
+        buf[c + 1] = (BYTE)p_Canvas[i][j].G;
+        buf[c + 2] = (BYTE)p_Canvas[i][j].R;
         c += 3;
       }
     }
-    SaveBitmapToFile((BYTE*)buf, p_Canvas.size(), p_Canvas[0].size(), 24, 0, "C:\\Users\\andre\\Desktop\\output.bmp");
-    delete [] buf;
+    SaveBitmapToFile((BYTE *)buf, p_Canvas.size(), p_Canvas[0].size(), 24, 0, "C:\\Users\\andre\\Desktop\\output.bmp");
+    delete[] buf;
   }
 
   namespace render
@@ -151,11 +177,20 @@ namespace sharp
           PlotLineHigh(p_Canvas, p_Point1, p_Point2, p_Color);
       }
     }
-    auto triangle(canvas &p_Canvas, Point p_Point1, Point p_Point2, Point p_Point3, Pixel p_Color) -> void
+    auto triangle_empty(canvas &p_Canvas, Point p_Point1, Point p_Point2, Point p_Point3, Pixel p_Color) -> void
     {
       line(p_Canvas, p_Point1, p_Point2, p_Color);
       line(p_Canvas, p_Point1, p_Point3, p_Color);
       line(p_Canvas, p_Point2, p_Point3, p_Color);
+    }
+    auto triangle_filled(canvas &p_Canvas, Point p_Point1, Point p_Point2, Point p_Point3, Pixel p_Color) -> void
+    {
+      line(p_Canvas, p_Point1, p_Point2, p_Color);
+      line(p_Canvas, p_Point1, p_Point3, p_Color);
+      line(p_Canvas, p_Point2, p_Point3, p_Color);
+      if (p_Point1.y < p_Point3.y)
+      {
+      }
     }
     // p_Canvas, top-left, bottom-left, bottom-right, top-right, p_Color
     auto rect(canvas &p_Canvas, Point p_Point1, Point p_Point2, Point p_Point3, Point p_Point4, Pixel p_Color) -> void
@@ -166,32 +201,32 @@ namespace sharp
       line(p_Canvas, p_Point1, p_Point4, p_Color);
     }
 
-    auto circle_empty(canvas &p_Canvas, Point p_Center, int p_Radius, Pixel p_Color) -> void 
+    auto circle_empty(canvas &p_Canvas, Point p_Center, int p_Radius, Pixel p_Color) -> void
     {
-       for(int i = p_Center.x - p_Radius; i <= p_Center.x + p_Radius; i++)
-       {
-        for(int j = p_Center.y - p_Radius; j <= p_Center.y + p_Radius; j++)
+      for (int i = p_Center.x - p_Radius; i <= p_Center.x + p_Radius; i++)
+      {
+        for (int j = p_Center.y - p_Radius; j <= p_Center.y + p_Radius; j++)
         {
-          if(math::closeTo((i - p_Center.x) * (i - p_Center.x) + (j - p_Center.y) * (j - p_Center.y), p_Radius * p_Radius, p_Radius))
+          if (math::closeTo((i - p_Center.x) * (i - p_Center.x) + (j - p_Center.y) * (j - p_Center.y), p_Radius * p_Radius, p_Radius))
           {
             color(p_Canvas, Point(i, j), p_Color);
           }
         }
-       }
+      }
     }
 
-    auto circle_filled(canvas &p_Canvas, Point p_Center, int p_Radius, Pixel p_Color) -> void 
+    auto circle_filled(canvas &p_Canvas, Point p_Center, int p_Radius, Pixel p_Color) -> void
     {
-       for(int i = p_Center.x - p_Radius; i <= p_Center.x + p_Radius; i++)
-       {
-        for(int j = p_Center.y - p_Radius; j <= p_Center.y + p_Radius; j++)
+      for (int i = p_Center.x - p_Radius; i <= p_Center.x + p_Radius; i++)
+      {
+        for (int j = p_Center.y - p_Radius; j <= p_Center.y + p_Radius; j++)
         {
-          if((i - p_Center.x) * (i - p_Center.x) + (j - p_Center.y) * (j - p_Center.y) <= p_Radius * p_Radius)
+          if ((i - p_Center.x) * (i - p_Center.x) + (j - p_Center.y) * (j - p_Center.y) <= p_Radius * p_Radius)
           {
             color(p_Canvas, Point(i, j), p_Color);
           }
         }
-       }
+      }
     }
   }
 

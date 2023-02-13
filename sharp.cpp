@@ -1,13 +1,13 @@
 #include <iostream>
 #include <utility>
-#include "../lib/sharp_lib.cpp"
+#include "./sharp_lib.cpp"
 
-const int WIDTH = 900;
-const int HEIGHT = 900;
+extern const int WIDTH = 900;
+extern const int HEIGHT = 900;
 
 auto main(void) -> int
 {
   sharp::canvas c = sharp::Canvas(WIDTH, HEIGHT, sharp::Colors.Black);
-  sharp::SaveCanvas(c);
+  sharp::SaveToBmp(c);
   return 0;
 }

@@ -5,15 +5,12 @@
 #include <fstream>
 #include <cstdint>
 #include <algorithm>
-#include "./lib/file_lib.cpp"
 #include "./lib/math_lib.cpp"
 
 extern const int WIDTH;
 extern const int HEIGHT;
 
 // TODO: Implement nobuild tool from rexim
-// TODO: Implement stb writing to file Linux/Windows
-// TOOD: Restructure the canvas so that it can be saved with stb
 
 namespace sharp
 {
@@ -38,6 +35,10 @@ namespace sharp
     Pixel Red = {255, 0, 0};
     Pixel Green = {0, 255, 0};
     Pixel Blue = {0, 0, 255};
+    unsigned long createRGBA(int r, int g, int b, int a = 255)
+    {
+      return ((a & 0xff) << 24) + ((b & 0xff) << 16) + ((g & 0xff) << 8) + (r & 0xff);
+    }
   } Colors;
 
   using canvas = std::vector<std::vector<Pixel>>;
@@ -65,35 +66,19 @@ namespace sharp
     }
   };
 
-  void SaveToBmp(sharp::canvas p_Canvas)
+  void SaveToPng(sharp::canvas p_Canvas)
   {
-    Pixel data[WIDTH][HEIGHT];
-    for (int i = 0; i < p_Canvas.size(); i++)
-    {
-      for (int j = 0; j < p_Canvas[i].size(); j++)
-      {
-        data[i][j] = p_Canvas[i][j];
-      }
-    }
-    stbi_write_bmp("C:\\Users\\andre\\home\\Projects\\sharp\\build\\output.bmp", p_Canvas.size(), p_Canvas[0].size(), 3, data);
-  }
+    auto height = p_Canvas.size();
+    auto width = p_Canvas[0].size();
 
-  void SaveCanvas(sharp::canvas p_Canvas)
-  {
-    BYTE *buf = new BYTE[p_Canvas.size() * 3 * p_Canvas[0].size()];
-    int c = 0;
-    for (int i = 0; i < p_Canvas.size(); i++)
-    {
-      for (int j = 0; j < p_Canvas[i].size(); j++)
-      {
-        buf[c + 0] = (BYTE)p_Canvas[i][j].B;
-        buf[c + 1] = (BYTE)p_Canvas[i][j].G;
-        buf[c + 2] = (BYTE)p_Canvas[i][j].R;
-        c += 3;
-      }
-    }
-    SaveBitmapToFile((BYTE *)buf, p_Canvas.size(), p_Canvas[0].size(), 24, 0, "C:\\Users\\andre\\Desktop\\output.bmp");
-    delete[] buf;
+    uint32_t *pixels = new uint32_t[width * height * sizeof(uint32_t)];
+
+    for (int y = 0; y < height; y++)
+      for (int x = 0; x < width; x++)
+        pixels[y * width + x] = Colors.createRGBA(p_Canvas[x][y].R, p_Canvas[x][y].G, p_Canvas[x][y].G);
+
+    stbi_write_png("./old.png", width, height, 4, pixels, sizeof(uint32_t) * width);
+    delete[] pixels;
   }
 
   namespace render

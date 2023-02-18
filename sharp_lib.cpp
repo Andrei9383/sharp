@@ -13,10 +13,12 @@ extern const int HEIGHT;
 
 // TODO: Implement nobuild tool from rexim
 // TODO: Implement stb writing to file Linux/Windows
-// TOOD: Restructure the canvas so that it can be saved with stb
+
+#define PixelPos(oc, x, y) (oc).pixels[(y) * (oc).stride + (x)]
 
 namespace sharp
 {
+
   struct Pixel
   {
     int R = 0;
@@ -38,20 +40,53 @@ namespace sharp
     Pixel Red = {255, 0, 0};
     Pixel Green = {0, 255, 0};
     Pixel Blue = {0, 0, 255};
+    unsigned long createRGBA(int r, int g, int b, int a = 255)
+    {
+      return ((a & 0xff) << 24) + ((b & 0xff) << 16) + ((g & 0xff) << 8) + (r & 0xff);
+    }
   } Colors;
+
+  typedef struct Canvas
+  {
+    uint32_t *pixels;
+    size_t width;
+    size_t height;
+    size_t stride;
+    Canvas(uint32_t *p_Pixels, size_t p_Width, size_t p_Height, size_t p_Stride) : pixels(p_Pixels), width(p_Width), height(p_Height), stride(p_Stride){};
+  };
 
   using canvas = std::vector<std::vector<Pixel>>;
 
-  auto Canvas(const int p_Width, const int p_Height, Pixel p_Color) -> canvas
+  auto NewCanvas(size_t p_Width, size_t p_Height, Pixel p_Color) -> Canvas
+  {
+    uint32_t *pixels = new uint32_t[p_Width * p_Height * sizeof(uint32_t)];
+    Canvas ret(pixels, p_Width, p_Height, p_Width);
+    for (size_t y = 0; y < ret.height; y++)
+    {
+      for (size_t x = 0; x < ret.width; x++)
+      {
+        PixelPos(ret, x, y) = Colors.createRGBA(p_Color.R, p_Color.G, p_Color.B, 255);
+      }
+    }
+    return ret;
+  }
+
+  auto NewSaveCanvas(Canvas p_Canvas) -> void
+  {
+    stbi_write_png("./output.png", p_Canvas.width, p_Canvas.height, 4, p_Canvas.pixels, sizeof(uint32_t) * p_Canvas.stride);
+  }
+
+  /*auto
+  CanvasOld(const int p_Width, const int p_Height, Pixel p_Color) -> canvas
   {
     canvas load(p_Height, std::vector<Pixel>(p_Width));
     std::vector<Pixel> widthVector(p_Width);
     fill(widthVector.begin(), widthVector.end(), p_Color);
     std::fill(load.begin(), load.end(), widthVector);
     return load;
-  };
+  };*/
 
-  auto PrintCanvas(canvas p_Canvas) -> void
+  /*auto PrintCanvas(canvas p_Canvas) -> void
   {
     for (int i = 0; i < p_Canvas.size(); i++)
     {
@@ -63,44 +98,13 @@ namespace sharp
       }
       std::cout << std::endl;
     }
-  };
-
-  void SaveToBmp(sharp::canvas p_Canvas)
-  {
-    Pixel data[WIDTH][HEIGHT];
-    for (int i = 0; i < p_Canvas.size(); i++)
-    {
-      for (int j = 0; j < p_Canvas[i].size(); j++)
-      {
-        data[i][j] = p_Canvas[i][j];
-      }
-    }
-    stbi_write_bmp("C:\\Users\\andre\\home\\Projects\\sharp\\build\\output.bmp", p_Canvas.size(), p_Canvas[0].size(), 3, data);
-  }
-
-  void SaveCanvas(sharp::canvas p_Canvas)
-  {
-    BYTE *buf = new BYTE[p_Canvas.size() * 3 * p_Canvas[0].size()];
-    int c = 0;
-    for (int i = 0; i < p_Canvas.size(); i++)
-    {
-      for (int j = 0; j < p_Canvas[i].size(); j++)
-      {
-        buf[c + 0] = (BYTE)p_Canvas[i][j].B;
-        buf[c + 1] = (BYTE)p_Canvas[i][j].G;
-        buf[c + 2] = (BYTE)p_Canvas[i][j].R;
-        c += 3;
-      }
-    }
-    SaveBitmapToFile((BYTE *)buf, p_Canvas.size(), p_Canvas[0].size(), 24, 0, "C:\\Users\\andre\\Desktop\\output.bmp");
-    delete[] buf;
-  }
+  };*/
 
   namespace render
   {
-
-    auto color(canvas &p_Canvas, Point p_Point, Pixel p_Color) -> void
+    auto color(Canvas &p_Canvas, Point p_Point, Pixel p_Color) -> void
     {
+
       p_Canvas[p_Point.x][p_Point.y].R = p_Color.R;
       p_Canvas[p_Point.x][p_Point.y].G = p_Color.G;
       p_Canvas[p_Point.x][p_Point.y].B = p_Color.B;

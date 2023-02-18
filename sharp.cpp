@@ -7,7 +7,9 @@ extern const int HEIGHT = 900;
 
 auto main(void) -> int
 {
-  sharp::canvas c = sharp::Canvas(WIDTH, HEIGHT, sharp::Colors.Black);
-  sharp::SaveToBmp(c);
+  auto c = sharp::NewCanvas(WIDTH, HEIGHT, sharp::Colors.Black);
+  // sharp::canvas c = sharp::Canvas(WIDTH, HEIGHT, sharp::Colors.Black);
+  sharp::NewSaveCanvas(c);
+  // sharp::SaveToBmp(c);
   return 0;
 }

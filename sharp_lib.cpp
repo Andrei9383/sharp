@@ -11,6 +11,8 @@ extern const int WIDTH;
 extern const int HEIGHT;
 
 // TODO: Implement nobuild tool from rexim
+// TODO: Triangle filled
+// TODO: Rect filled
 
 namespace sharp
 {
@@ -214,5 +216,4 @@ namespace sharp
       }
     }
   }
-
 }

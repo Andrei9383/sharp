@@ -3,10 +3,10 @@
 * TODO [0/7]
 - [ ] Implement Rexims no-build build system
   - https://github.com/tsoding/nobuild
-- [ ] Implement SDL2 rendering to native application
-  - [ ] Create SDL2 window
+- [-] Implement SDL2 rendering to native application
+  - [X] Create SDL2 window
   - [ ] Create neccesary framework for switching modes
-  - [ ] Render to application
+  - [X] Render to application
 - [ ] More examples
 - [ ] More primitives
   - [ ] Filled triangle

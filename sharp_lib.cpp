@@ -4,7 +4,9 @@
 #include <fstream>
 #include <cstdint>
 #include <algorithm>
+#include <string>
 #include "./lib/math_lib.cpp"
+#include "SDL.h"
 
 extern const int WIDTH;
 extern const int HEIGHT;
@@ -12,6 +14,7 @@ extern const int HEIGHT;
 // TODO: Implement nobuild tool from rexim
 // TODO: Triangle filled
 // TODO: Rect filled
+// TODO: SDL rendering
 
 namespace sharp
 {
@@ -51,20 +54,6 @@ namespace sharp
     fill(widthVector.begin(), widthVector.end(), p_Color);
     std::fill(load.begin(), load.end(), widthVector);
     return load;
-  };
-
-  auto PrintCanvas(canvas p_Canvas) -> void
-  {
-    for (int i = 0; i < p_Canvas.size(); i++)
-    {
-      for (int j = 0; j < p_Canvas[i].size(); j++)
-      {
-        std::cout << "(" << p_Canvas[i][j].R << ","
-                  << p_Canvas[i][j].G << ","
-                  << p_Canvas[i][j].B << ") ";
-      }
-      std::cout << std::endl;
-    }
   };
 
   void SaveToPng(sharp::canvas p_Canvas)
@@ -174,10 +163,8 @@ namespace sharp
       line(p_Canvas, p_Point1, p_Point2, p_Color);
       line(p_Canvas, p_Point1, p_Point3, p_Color);
       line(p_Canvas, p_Point2, p_Point3, p_Color);
-      if (p_Point1.y < p_Point3.y)
-      {
-      }
     }
+
     // p_Canvas, top-left, bottom-left, bottom-right, top-right, p_Color
     auto rect(canvas &p_Canvas, Point p_Point1, Point p_Point2, Point p_Point3, Point p_Point4, Pixel p_Color) -> void
     {
@@ -213,6 +200,67 @@ namespace sharp
           }
         }
       }
+    }
+  }
+  namespace application {
+
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Surface* surface;
+    SDL_Event event;
+
+    auto create_sdl_window(std::string p_Title="App")
+    {
+      if(SDL_Init(SDL_INIT_VIDEO) < 0)
+      {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't init SDL: %s", SDL_GetError());
+        return 3;
+      }
+
+      if (SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer))
+      {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
+        return 3;
+      }
+
+      SDL_SetWindowResizable(window, SDL_FALSE);
+      SDL_SetWindowTitle(window, p_Title.c_str());
+
+   }
+    auto draw_canvas(sharp::canvas p_Canvas)
+    {
+      auto height = p_Canvas.size();
+      auto width = p_Canvas[0].size();
+
+      SDL_Texture* theTexture;
+
+      theTexture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height );
+      uint32_t *pixels = new uint32_t[width * height * sizeof(uint32_t)];
+
+      for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
+          pixels[y * width + x] = Colors.createRGBA(p_Canvas[x][y].R, p_Canvas[x][y].G, p_Canvas[x][y].G);
+
+      while (1)
+      {
+        SDL_PollEvent(&event);
+        if (event.type == SDL_QUIT)
+          break;
+
+        SDL_RenderClear(renderer);
+        SDL_UpdateTexture(theTexture, NULL, pixels, sizeof(uint32_t) * width);
+        SDL_RenderCopy(renderer, theTexture, NULL, NULL);
+        SDL_RenderPresent(renderer);
+      }
+
+      // Avoid memory leaks
+      delete[] pixels;
+      SDL_DestroyTexture(theTexture);
+      SDL_DestroyRenderer(renderer);
+      SDL_DestroyWindow(window);
+
+      SDL_Quit();
+
     }
   }
 }

@@ -11,11 +11,6 @@
 extern const int WIDTH;
 extern const int HEIGHT;
 
-// TODO: Implement nobuild tool from rexim
-// TODO: Triangle filled
-// TODO: Rect filled
-// TODO: SDL rendering
-
 namespace sharp
 {
   struct Pixel

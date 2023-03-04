@@ -6,3 +6,6 @@ cd sharp
 meson build && cd build
 meson compile
 ```
+# How to use
+Just `#include "sharp_lib.cpp"` in your source code and you're ready to use sharp.
+

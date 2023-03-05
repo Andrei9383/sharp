@@ -51,6 +51,10 @@ namespace sharp
     return load;
   };
 
+  auto ClearCanvas(sharp::canvas &p_Canvas)
+  {
+   p_Canvas = sharp::Canvas(p_Canvas.size(), p_Canvas[0].size(), sharp::Colors.White);
+  }
   void SaveToPng(sharp::canvas p_Canvas)
   {
     auto height = p_Canvas.size();
@@ -199,63 +203,77 @@ namespace sharp
   }
   namespace application {
 
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Surface* surface;
-    SDL_Event event;
+    class rendering {
+      public:
+      SDL_Window* window;
+      SDL_Renderer* renderer;
+      SDL_Surface* surface;
+      SDL_Event event;
+      SDL_Texture* texture;
 
-    auto create_sdl_window(std::string p_Title="App")
-    {
-      if(SDL_Init(SDL_INIT_VIDEO) < 0)
+      auto create_sdl_window(std::string p_Title="App")
       {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't init SDL: %s", SDL_GetError());
-        return 3;
+        if(SDL_Init(SDL_INIT_VIDEO) < 0)
+          {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't init SDL: %s", SDL_GetError());
+            return 3;
+          }
+
+        if (SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer))
+          {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
+            return 3;
+          }
+
+        SDL_SetWindowResizable(window, SDL_FALSE);
+        SDL_SetWindowTitle(window, p_Title.c_str());
+
       }
 
-      if (SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer))
+      auto update_texture(sharp::canvas p_Canvas, int width, int height)
       {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
-        return 3;
+        texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height );
+        uint32_t *pixels = new uint32_t[width * height * sizeof(uint32_t)];
+
+        for (int y = 0; y < height; y++)
+          for (int x = 0; x < width; x++)
+            pixels[y * width + x] = Colors.createRGBA(p_Canvas[x][y].G, p_Canvas[x][y].B, p_Canvas[x][y].R);
+
+        SDL_UpdateTexture(texture, NULL, pixels, sizeof(uint32_t) * width);
+        delete[] pixels;
       }
-
-      SDL_SetWindowResizable(window, SDL_FALSE);
-      SDL_SetWindowTitle(window, p_Title.c_str());
-
-   }
-    auto draw_canvas(sharp::canvas p_Canvas)
-    {
-      auto height = p_Canvas.size();
-      auto width = p_Canvas[0].size();
-
-      SDL_Texture* theTexture;
-
-      theTexture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height );
-      uint32_t *pixels = new uint32_t[width * height * sizeof(uint32_t)];
-
-      for (int y = 0; y < height; y++)
-        for (int x = 0; x < width; x++)
-          pixels[y * width + x] = Colors.createRGBA(p_Canvas[x][y].R, p_Canvas[x][y].G, p_Canvas[x][y].G);
-
-      while (1)
+      auto clear_render()
       {
-        SDL_PollEvent(&event);
-        if (event.type == SDL_QUIT)
-          break;
-
-        SDL_RenderClear(renderer);
-        SDL_UpdateTexture(theTexture, NULL, pixels, sizeof(uint32_t) * width);
-        SDL_RenderCopy(renderer, theTexture, NULL, NULL);
-        SDL_RenderPresent(renderer);
+            SDL_RenderClear(renderer);
+            SDL_RenderPresent(renderer);
       }
+      template<typename Function>
+      auto draw_canvas(sharp::canvas &p_Canvas, Function func)
+      {
+        auto height = p_Canvas.size();
+        auto width = p_Canvas[0].size();
+            SDL_RenderClear(renderer);
+            func();
+            update_texture(p_Canvas, width, height);
+            SDL_RenderCopy(renderer, texture, NULL, NULL);
+            SDL_RenderPresent(renderer);
+        while (1)
+          {
+            SDL_PollEvent(&event);
+            if (event.type == SDL_QUIT)
+              break;
 
-      // Avoid memory leaks
-      delete[] pixels;
-      SDL_DestroyTexture(theTexture);
-      SDL_DestroyRenderer(renderer);
-      SDL_DestroyWindow(window);
+            SDL_RenderPresent(renderer);
+          }
 
-      SDL_Quit();
+        // Avoid memory leaks
+        SDL_DestroyTexture(texture);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
 
+        SDL_Quit();
+
+      }
+    };
     }
-  }
 }

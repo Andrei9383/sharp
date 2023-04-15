@@ -64,7 +64,7 @@ namespace sharp
 
     for (int y = 0; y < height; y++)
       for (int x = 0; x < width; x++)
-        pixels[y * width + x] = Colors.createRGBA(p_Canvas[x][y].R, p_Canvas[x][y].G, p_Canvas[x][y].G);
+        pixels[y * width + x] = Colors.createRGBA(p_Canvas[x][y].B, p_Canvas[x][y].G, p_Canvas[x][y].R);
 
     stbi_write_png("./old.png", width, height, 4, pixels, sizeof(uint32_t) * width);
     delete[] pixels;
@@ -237,7 +237,7 @@ namespace sharp
 
         for (int y = 0; y < height; y++)
           for (int x = 0; x < width; x++)
-            pixels[y * width + x] = Colors.createRGBA(p_Canvas[x][y].G, p_Canvas[x][y].B, p_Canvas[x][y].R);
+            pixels[y * width + x] = Colors.createRGBA(p_Canvas[x][y].B, p_Canvas[x][y].G, p_Canvas[x][y].R);
 
         SDL_UpdateTexture(texture, NULL, pixels, sizeof(uint32_t) * width);
         delete[] pixels;
@@ -252,21 +252,21 @@ namespace sharp
       {
         auto height = p_Canvas.size();
         auto width = p_Canvas[0].size();
-            SDL_RenderClear(renderer);
-            func();
-            update_texture(p_Canvas, width, height);
-            SDL_RenderCopy(renderer, texture, NULL, NULL);
-            SDL_RenderPresent(renderer);
+        SDL_RenderClear(renderer);
+        func();
+        update_texture(p_Canvas, width, height);
+        SDL_RenderCopy(renderer, texture, NULL, NULL);
+        SDL_RenderPresent(renderer);
         while (1)
-          {
-            SDL_PollEvent(&event);
-            if (event.type == SDL_QUIT)
-              break;
-
-            SDL_RenderPresent(renderer);
-          }
-
-        // Avoid memory leaks
+        {
+          SDL_PollEvent(&event);
+          if (event.type == SDL_QUIT)
+            break;
+          func();
+          update_texture(p_Canvas, width, height);
+          SDL_RenderCopy(renderer, texture, NULL, NULL);
+          SDL_RenderPresent(renderer);
+        }
         SDL_DestroyTexture(texture);
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);

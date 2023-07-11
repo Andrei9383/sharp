@@ -5,12 +5,21 @@
 #include <cstdint>
 #include <algorithm>
 #include <string>
-#include "./lib/math_lib.cpp"
 #include "SDL.h"
+#include <cmath>
 
 extern const int WIDTH;
 extern const int HEIGHT;
 
+namespace math
+{
+  bool closeTo(int p_A, int p_B, int p_Error)
+  {
+    if (abs(p_A - p_B) <= p_Error)
+      return true;
+    return false;
+  }
+}
 namespace sharp
 {
   struct Pixel
@@ -53,7 +62,7 @@ namespace sharp
 
   auto ClearCanvas(sharp::canvas &p_Canvas)
   {
-   p_Canvas = sharp::Canvas(p_Canvas.size(), p_Canvas[0].size(), sharp::Colors.White);
+    p_Canvas = sharp::Canvas(p_Canvas.size(), p_Canvas[0].size(), sharp::Colors.White);
   }
   void SaveToPng(sharp::canvas p_Canvas)
   {
@@ -201,38 +210,39 @@ namespace sharp
       }
     }
   }
-  namespace application {
+  namespace application
+  {
 
-    class rendering {
-      public:
-      SDL_Window* window;
-      SDL_Renderer* renderer;
-      SDL_Surface* surface;
+    class rendering
+    {
+    public:
+      SDL_Window *window;
+      SDL_Renderer *renderer;
+      SDL_Surface *surface;
       SDL_Event event;
-      SDL_Texture* texture;
+      SDL_Texture *texture SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+      ;
 
-      auto create_sdl_window(std::string p_Title="App")
+      auto create_sdl_window(std::string p_Title = "App")
       {
-        if(SDL_Init(SDL_INIT_VIDEO) < 0)
-          {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't init SDL: %s", SDL_GetError());
-            return 3;
-          }
+        if (SDL_Init(SDL_INIT_VIDEO) < 0)
+        {
+          SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't init SDL: %s", SDL_GetError());
+          return 3;
+        }
 
         if (SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer))
-          {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
-            return 3;
-          }
+        {
+          SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
+          return 3;
+        }
 
         SDL_SetWindowResizable(window, SDL_FALSE);
         SDL_SetWindowTitle(window, p_Title.c_str());
-
       }
 
       auto update_texture(sharp::canvas p_Canvas, int width, int height)
       {
-        texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height );
         uint32_t *pixels = new uint32_t[width * height * sizeof(uint32_t)];
 
         for (int y = 0; y < height; y++)
@@ -244,19 +254,15 @@ namespace sharp
       }
       auto clear_render()
       {
-            SDL_RenderClear(renderer);
-            SDL_RenderPresent(renderer);
+        SDL_RenderClear(renderer);
+        SDL_RenderPresent(renderer);
       }
-      template<typename Function>
+      template <typename Function>
       auto draw_canvas(sharp::canvas &p_Canvas, Function func)
       {
         auto height = p_Canvas.size();
         auto width = p_Canvas[0].size();
         SDL_RenderClear(renderer);
-        func();
-        update_texture(p_Canvas, width, height);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
-        SDL_RenderPresent(renderer);
         while (1)
         {
           SDL_PollEvent(&event);
@@ -272,8 +278,7 @@ namespace sharp
         SDL_DestroyWindow(window);
 
         SDL_Quit();
-
       }
     };
-    }
+  }
 }
